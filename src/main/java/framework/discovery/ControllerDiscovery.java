@@ -1,9 +1,16 @@
 package framework.discovery;
 
+import framework.annotations.APIPath;
 import framework.annotations.Controller;
+import framework.annotations.Path;
+import framework.annotations.methods.GET;
+import framework.annotations.methods.POST;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.sql.Array;
 import java.util.*;
@@ -11,6 +18,8 @@ import java.util.*;
 public class ControllerDiscovery {
 
     private static ControllerDiscovery instance;
+    private static Map<String, Object> controllerInstances = new HashMap<String, Object>();
+    private static Map<String, Method> controllerMethodMaps = new HashMap<String, Method>();
 
     private ControllerDiscovery(){}
 
@@ -19,6 +28,7 @@ public class ControllerDiscovery {
             synchronized (ControllerDiscovery.class){
                 if (instance == null){
                     instance = new ControllerDiscovery();
+                    mapRoutesToControllers();
                 }
             }
         }
@@ -26,7 +36,69 @@ public class ControllerDiscovery {
         return instance;
     }
 
-    public Class[] findControllers(String packageName) throws ClassNotFoundException, IOException {
+    private static void mapRoutesToControllers(){
+        try{
+            Class controllerClasses[] = findControllers("server");
+
+            if(controllerClasses.length == 0)
+                return;
+
+            for(Class clazz : controllerClasses){
+                instantiateController(clazz);
+                mapMethods(clazz);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static void instantiateController(Class clazz){
+        try{
+            if(clazz.isAnnotationPresent(APIPath.class)){
+                APIPath apiPath = (APIPath) clazz.getAnnotation(APIPath.class);
+
+                if(!apiPath.apiPath().isEmpty()){
+                    System.out.println(apiPath.apiPath());
+                    Constructor controllerConstructor = clazz.getDeclaredConstructors()[0];
+                    Object controllerInstance = controllerConstructor.newInstance();
+
+                    controllerInstances.put(apiPath.apiPath(), controllerInstance);
+                }
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static void mapMethods(Class clazz){
+        try{
+            Method controllerMethods[] = clazz.getDeclaredMethods();
+
+            for(Method method : controllerMethods){
+                String path = "";
+                if(method.isAnnotationPresent(Path.class)){
+                    Path methodPath = (Path) method.getAnnotation(Path.class);
+                    path = methodPath.path();
+                }
+
+                if(method.isAnnotationPresent(GET.class)){
+                    controllerMethodMaps.put("GET:" + path, method);
+                    continue;
+                }
+
+                if(method.isAnnotationPresent(POST.class)){
+                    controllerMethodMaps.put("POST:" + path, method);
+                    continue;
+                }
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+    private static Class[] findControllers(String packageName) throws ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String path = packageName.replace('.','/');
 
@@ -50,7 +122,7 @@ public class ControllerDiscovery {
         return finalClasses.toArray(new Class[finalClasses.size()]);
     }
 
-    public List<Class> findClasses(File directory, String packageName) throws ClassNotFoundException {
+    private static List<Class> findClasses(File directory, String packageName) throws ClassNotFoundException {
         List<Class> classes = new ArrayList<Class>();
 
         if(!directory.exists()){
@@ -70,7 +142,7 @@ public class ControllerDiscovery {
         return classes;
     }
 
-    public List<Class> filterClasses(ArrayList<Class> classes){
+    private static List<Class> filterClasses(ArrayList<Class> classes){
         List<Class> controllerClasses = new ArrayList<>();
 
         for(Class clazz : classes){
