@@ -14,6 +14,8 @@ public class Helper {
         return Helper.getParametersFromString(splittedRoute[1]);
     }
 
+    // message=ASSDASDAASDA&body=HELLO
+
     public static HashMap<String, String> getParametersFromString(String parametersString) {
         HashMap<String, String> parameters = new HashMap<String, String>();
         String[] pairs = parametersString.split("&");

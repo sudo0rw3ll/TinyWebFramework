@@ -71,7 +71,7 @@ public class DIEngine {
             }
 
             for(Map.Entry<String, Object> set : controllersMap.entrySet()){
-                System.out.println("Initialized controller for APIpath " + set.getKey());
+                System.out.println("[*] Initialized controller for APIpath " + set.getKey());
             }
         }catch (Exception e){
             e.printStackTrace();
