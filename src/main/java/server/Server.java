@@ -1,5 +1,8 @@
 package server;
 
+import framework.discovery.ControllerDiscovery;
+import framework.engine.DIEngine;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -7,6 +10,8 @@ import java.net.Socket;
 public class Server {
 
     public static final int TCP_PORT = 8080;
+    public static ControllerDiscovery controllerDiscovery = ControllerDiscovery.getInstance();
+    public static DIEngine diEngine = DIEngine.getInstance();
 
     public static void main(String[] args) throws IOException {
 
@@ -23,4 +28,5 @@ public class Server {
         }
 
     }
+
 }

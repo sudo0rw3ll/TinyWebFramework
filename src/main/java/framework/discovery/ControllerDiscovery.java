@@ -44,7 +44,7 @@ public class ControllerDiscovery {
                 return;
 
             for(Class clazz : controllerClasses){
-                instantiateController(clazz);
+//                instantiateController(clazz);
                 mapMethods(clazz);
             }
         }catch (Exception e){
@@ -57,12 +57,17 @@ public class ControllerDiscovery {
             if(clazz.isAnnotationPresent(APIPath.class)){
                 APIPath apiPath = (APIPath) clazz.getAnnotation(APIPath.class);
 
-                if(!apiPath.apiPath().isEmpty()){
-                    System.out.println(apiPath.apiPath());
+                String path = apiPath.apiPath();
+
+                if(!path.isEmpty()){
+                    if(!path.startsWith("/"))
+                        path = "/" + path;
+
+                    System.out.println(path);
                     Constructor controllerConstructor = clazz.getDeclaredConstructors()[0];
                     Object controllerInstance = controllerConstructor.newInstance();
 
-                    controllerInstances.put(apiPath.apiPath(), controllerInstance);
+                    controllerInstances.put(path, controllerInstance);
                 }
             }
 
@@ -75,6 +80,15 @@ public class ControllerDiscovery {
         try{
             Method controllerMethods[] = clazz.getDeclaredMethods();
 
+            String apiPath = "";
+
+            if(clazz.isAnnotationPresent(APIPath.class)){
+                apiPath =  ((APIPath) clazz.getAnnotation(APIPath.class)).apiPath();
+
+                if(!apiPath.startsWith("/"))
+                    apiPath = "/" + apiPath;
+            }
+
             for(Method method : controllerMethods){
                 String path = "";
                 if(method.isAnnotationPresent(Path.class)){
@@ -82,15 +96,23 @@ public class ControllerDiscovery {
                     path = methodPath.path();
                 }
 
+                if(!path.startsWith("/"))
+                    path = "/" + path;
+
                 if(method.isAnnotationPresent(GET.class)){
-                    controllerMethodMaps.put("GET:" + path, method);
+                    String controllerMethodKey = apiPath.isEmpty() ? "GET:" + path : "GET:" + apiPath + path;
+                    controllerMethodMaps.put(controllerMethodKey, method);
                     continue;
                 }
 
                 if(method.isAnnotationPresent(POST.class)){
-                    controllerMethodMaps.put("POST:" + path, method);
-                    continue;
+                    String controllerMethodKey = apiPath.isEmpty() ? "POST:" + path : "POST:" + apiPath + path;
+                    controllerMethodMaps.put(controllerMethodKey, method);
                 }
+            }
+
+            for(Map.Entry<String, Method> set : controllerMethodMaps.entrySet()){
+                System.out.println(set.getKey() + " maps to method " + (((Method) set.getValue()).getName()));
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -98,7 +120,7 @@ public class ControllerDiscovery {
     }
 
 
-    private static Class[] findControllers(String packageName) throws ClassNotFoundException, IOException {
+    public static Class[] findControllers(String packageName) throws ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String path = packageName.replace('.','/');
 
@@ -152,5 +174,13 @@ public class ControllerDiscovery {
         }
 
         return controllerClasses;
+    }
+
+    public Method getControllerMethod(String path){
+        if(controllerMethodMaps.containsKey(path)){
+            return controllerMethodMaps.get(path);
+        }
+
+        return null;
     }
 }

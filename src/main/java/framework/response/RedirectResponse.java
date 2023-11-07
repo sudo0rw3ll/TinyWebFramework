@@ -1,5 +1,6 @@
 package framework.response;
 
+
 public class RedirectResponse extends Response {
 
     private String url;
