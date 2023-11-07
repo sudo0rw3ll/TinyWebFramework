@@ -10,6 +10,8 @@ import framework.annotations.methods.POST;
 import framework.request.Header;
 import framework.request.Request;
 
+import java.util.*;
+
 @Controller
 @APIPath(apiPath = "users")
 public class TestClass {
@@ -24,14 +26,21 @@ public class TestClass {
 
 
     @GET
-    @Path(path = "getAllUsers")
-    public void getUsers(){
-        this.testIntf.hello();
+    @Path(path = "ping")
+    public String ping(){
+        return this.testIntf.ping();
     }
+
+    @GET
+    @Path(path = "getUser")
+    public User getUser(Map<String, String> requestParameters){
+        return this.testIntf.getUser(requestParameters);
+    }
+
 
     @POST
     @Path(path = "createUser")
-    public int createUser(){
-        return 1;
+    public User createUser(Map<String, String> requestParameters){
+        return this.testIntf.createUser(requestParameters);
     }
 }
